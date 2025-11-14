@@ -13,27 +13,44 @@
         }
         h1 {
             text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            margin-bottom: 0.75rem;
         }
         .card {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             padding: 2rem;
         }
+        .section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        .section:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
         label {
             display: block;
             font-weight: 600;
             margin-top: 1rem;
         }
-        input {
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
             width: 100%;
             padding: 0.5rem;
             margin-top: 0.25rem;
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 1rem;
+            background: #fff;
         }
         button {
             margin-top: 1.5rem;
@@ -44,12 +61,17 @@
             color: #fff;
             border-radius: 6px;
             cursor: pointer;
+            transition: background 0.2s ease-in-out;
         }
-        button:hover {
+        button:disabled {
+            background: #a5b4fc;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
             background: #4338ca;
         }
         .results {
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             display: grid;
             gap: 1rem;
         }
@@ -62,34 +84,87 @@
             color: #b91c1c;
             margin-top: 1rem;
         }
+        .status {
+            margin-top: 1rem;
+            color: #1e3a8a;
+        }
         .hint {
             font-size: 0.9rem;
             color: #555;
+            margin-top: 0.25rem;
+        }
+        .graph-canvas {
+            display: none;
+            margin-top: 1.5rem;
+            width: 100%;
+            max-width: 100%;
+            border: 1px dashed #cbd5f5;
+            background: #fff;
+        }
+        .markers-legend {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 1rem;
+        }
+        .legend-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Graph Maximum and Minimum Finder</h1>
-        <p class="hint">
-            Enter a mathematical expression using the variable <code>x</code> (e.g. <code>Math.sin(x)</code> or <code>x*x - 4*x + 1</code>)
-            and choose the range and step size over which to evaluate the function.
-        </p>
-        <label for="expression">Function expression</label>
-        <input id="expression" type="text" placeholder="x*x - 4*x + 1" value="x*x - 4*x + 1" />
 
-        <label for="start">Start of range</label>
-        <input id="start" type="number" value="-10" />
+        <section class="section" aria-labelledby="expression-section-title">
+            <h2 id="expression-section-title">Evaluate a Function</h2>
+            <p class="hint">
+                Enter a mathematical expression using the variable <code>x</code> (e.g. <code>Math.sin(x)</code> or
+                <code>x*x - 4*x + 1</code>) and choose the range and step size over which to evaluate the function.
+            </p>
+            <label for="expression">Function expression</label>
+            <input id="expression" type="text" placeholder="x*x - 4*x + 1" value="x*x - 4*x + 1" />
 
-        <label for="end">End of range</label>
-        <input id="end" type="number" value="10" />
+            <label for="start">Start of range</label>
+            <input id="start" type="number" value="-10" />
 
-        <label for="step">Step size</label>
-        <input id="step" type="number" value="0.1" step="0.1" />
+            <label for="end">End of range</label>
+            <input id="end" type="number" value="10" />
 
-        <button id="analyze">Find extremes</button>
-        <div id="message" class="error" role="alert"></div>
-        <div id="results" class="results" aria-live="polite"></div>
+            <label for="step">Step size</label>
+            <input id="step" type="number" value="0.1" step="0.1" />
+
+            <button id="analyze">Find extremes</button>
+            <div id="message" class="error" role="alert"></div>
+            <div id="results" class="results" aria-live="polite"></div>
+        </section>
+
+        <section class="section" aria-labelledby="image-section-title">
+            <h2 id="image-section-title">Spot Extremes on a Graph Image</h2>
+            <p class="hint">
+                Upload a clear image of a plotted curve on a light background. The tool will highlight the approximate
+                highest and lowest points detected in the image.
+            </p>
+            <label for="graphImage">Graph image</label>
+            <input id="graphImage" type="file" accept="image/*" />
+            <button id="analyzeImage" disabled>Spot extremes on image</button>
+            <canvas id="graphCanvas" class="graph-canvas" aria-label="Uploaded graph image"></canvas>
+            <div class="markers-legend" id="markersLegend" hidden>
+                <span class="legend-item"><span class="legend-swatch" style="background:#dc2626"></span>Maximum marker</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#2563eb"></span>Minimum marker</span>
+            </div>
+            <div id="imageMessage" class="error" role="alert"></div>
+            <div id="imageStatus" class="status" aria-live="polite"></div>
+        </section>
     </div>
 
     <script>
@@ -177,6 +252,193 @@
                 console.error(error);
                 messageContainer.textContent = error.message;
             }
+        });
+
+        const graphImageInput = document.getElementById('graphImage');
+        const analyzeImageButton = document.getElementById('analyzeImage');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const markersLegend = document.getElementById('markersLegend');
+        const imageMessageContainer = document.getElementById('imageMessage');
+        const imageStatusContainer = document.getElementById('imageStatus');
+        const canvasContext = graphCanvas.getContext('2d');
+        let currentImage = null;
+
+        function resetImageFeedback() {
+            imageMessageContainer.textContent = '';
+            imageStatusContainer.textContent = '';
+        }
+
+        graphImageInput.addEventListener('change', () => {
+            resetImageFeedback();
+            analyzeImageButton.disabled = true;
+            markersLegend.hidden = true;
+
+            const [file] = graphImageInput.files;
+            if (!file) {
+                graphCanvas.style.display = 'none';
+                canvasContext.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+                currentImage = null;
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                imageMessageContainer.textContent = 'Please upload a valid image file.';
+                graphImageInput.value = '';
+                return;
+            }
+
+            const imageUrl = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                const maxWidth = 900;
+                const maxHeight = 600;
+                const scale = Math.min(maxWidth / img.naturalWidth, maxHeight / img.naturalHeight, 1);
+                const width = Math.round(img.naturalWidth * scale);
+                const height = Math.round(img.naturalHeight * scale);
+
+                graphCanvas.width = width;
+                graphCanvas.height = height;
+                graphCanvas.style.display = 'block';
+
+                canvasContext.clearRect(0, 0, width, height);
+                canvasContext.drawImage(img, 0, 0, width, height);
+                currentImage = img;
+                analyzeImageButton.disabled = false;
+                imageStatusContainer.textContent = 'Image loaded. Click "Spot extremes on image" to highlight the extrema.';
+
+                URL.revokeObjectURL(imageUrl);
+            };
+            img.onerror = () => {
+                imageMessageContainer.textContent = 'Unable to load the selected image. Please choose another file.';
+                URL.revokeObjectURL(imageUrl);
+            };
+            img.src = imageUrl;
+        });
+
+        function getBrightness(r, g, b) {
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+
+        function detectExtremaFromImage(ctx, width, height) {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const { data } = imageData;
+            let brightnessSum = 0;
+            let pixelCount = 0;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const alpha = data[i + 3];
+                if (alpha < 64) {
+                    continue;
+                }
+                const brightness = getBrightness(data[i], data[i + 1], data[i + 2]);
+                brightnessSum += brightness;
+                pixelCount += 1;
+            }
+
+            if (pixelCount === 0) {
+                return null;
+            }
+
+            const averageBrightness = brightnessSum / pixelCount;
+            const threshold = averageBrightness * 0.82;
+
+            let minY = height;
+            let maxY = -1;
+            const topCandidates = [];
+            const bottomCandidates = [];
+
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    const offset = (y * width + x) * 4;
+                    const alpha = data[offset + 3];
+                    if (alpha < 64) {
+                        continue;
+                    }
+                    const brightness = getBrightness(data[offset], data[offset + 1], data[offset + 2]);
+                    if (brightness <= threshold) {
+                        if (y < minY - 1) {
+                            minY = y;
+                            topCandidates.length = 0;
+                        }
+                        if (y <= minY + 1) {
+                            topCandidates.push({ x, y });
+                        }
+                        if (y > maxY + 1) {
+                            maxY = y;
+                            bottomCandidates.length = 0;
+                        }
+                        if (y >= maxY - 1) {
+                            bottomCandidates.push({ x, y });
+                        }
+                    }
+                }
+            }
+
+            if (!topCandidates.length || !bottomCandidates.length) {
+                return null;
+            }
+
+            const topPoint = averagePoint(topCandidates);
+            const bottomPoint = averagePoint(bottomCandidates);
+
+            return { topPoint, bottomPoint };
+        }
+
+        function averagePoint(points) {
+            const total = points.reduce(
+                (accumulator, point) => {
+                    accumulator.x += point.x;
+                    accumulator.y += point.y;
+                    return accumulator;
+                },
+                { x: 0, y: 0 }
+            );
+            return {
+                x: total.x / points.length,
+                y: total.y / points.length,
+            };
+        }
+
+        function drawMarker(ctx, point, color, label, canvas) {
+            const radius = Math.max(6, Math.round(Math.min(canvas.width, canvas.height) * 0.02));
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            ctx.font = `${Math.max(14, radius * 1.4)}px Arial`;
+            ctx.fillStyle = color;
+            const textX = Math.min(canvas.width - radius, point.x + radius + 6);
+            const textY = Math.max(radius * 2, point.y - radius - 6);
+            ctx.fillText(label, textX, textY);
+            ctx.restore();
+        }
+
+        analyzeImageButton.addEventListener('click', () => {
+            resetImageFeedback();
+            imageStatusContainer.textContent = '';
+
+            if (!currentImage || !graphCanvas.width || !graphCanvas.height) {
+                imageMessageContainer.textContent = 'Please upload an image before running the analysis.';
+                return;
+            }
+
+            const { width, height } = graphCanvas;
+            canvasContext.clearRect(0, 0, width, height);
+            canvasContext.drawImage(currentImage, 0, 0, width, height);
+
+            const extrema = detectExtremaFromImage(canvasContext, width, height);
+            if (!extrema) {
+                imageMessageContainer.textContent = 'Unable to detect clear extrema. Try a higher-contrast image.';
+                return;
+            }
+
+            drawMarker(canvasContext, extrema.topPoint, '#dc2626', 'Max', graphCanvas);
+            drawMarker(canvasContext, extrema.bottomPoint, '#2563eb', 'Min', graphCanvas);
+            markersLegend.hidden = false;
+            imageStatusContainer.textContent = 'Highlighted the probable maximum (red) and minimum (blue) points on the image.';
         });
     </script>
 </body>
