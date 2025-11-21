@@ -398,6 +398,57 @@ function detectLocalExtrema(profile) {
     return { maxima, minima };
 }
 
+function snapPointToMask(point, mask, width, height, radius = 3) {
+    if (!point) {
+        return null;
+    }
+
+    const centerX = Math.round(point.x);
+    const centerY = Math.round(point.y);
+    const radiusSq = radius * radius;
+    let best = null;
+
+    for (let dy = -radius; dy <= radius; dy += 1) {
+        const y = centerY + dy;
+        if (y < 0 || y >= height) {
+            continue;
+        }
+        for (let dx = -radius; dx <= radius; dx += 1) {
+            const x = centerX + dx;
+            if (x < 0 || x >= width) {
+                continue;
+            }
+            const distanceSq = dx * dx + dy * dy;
+            if (distanceSq > radiusSq) {
+                continue;
+            }
+
+            const index = y * width + x;
+            if (mask[index]) {
+                if (!best || distanceSq < best.distanceSq) {
+                    best = { x, y, distanceSq };
+                }
+            }
+        }
+    }
+
+    if (!best) {
+        return null;
+    }
+
+    return { x: best.x, y: best.y };
+}
+
+function snapPointsToMask(points, mask, width, height, radius = 3) {
+    if (!points) {
+        return [];
+    }
+
+    return points
+        .map((point) => snapPointToMask(point, mask, width, height, radius))
+        .filter((point) => point !== null);
+}
+
 function drawMarker(ctx, point, { color, label }) {
     if (!point) {
         return;
@@ -459,49 +510,56 @@ analyzeImageButton.addEventListener('click', () => {
         return;
     }
 
-    const extrema = findExtremaFromMask(highlightSummary.highlightMask, width, height);
-    const profile = buildCurveProfile(highlightSummary.highlightMask, width, height);
+    const mask = highlightSummary.highlightMask;
+    const extrema = findExtremaFromMask(mask, width, height);
+    const profile = buildCurveProfile(mask, width, height);
     const localExtrema = detectLocalExtrema(profile);
 
-    if (extrema && extrema.flatPoint) {
-        drawMarker(canvasContext, extrema.flatPoint, { color: '#c026d3', label: 'Flat extremum' });
-        imageStatusContainer.textContent = `Highlighted ${highlightSummary.highlightedCount.toLocaleString()} coloured pixels after filtering out grid lines. Marked a flat extremum${localExtrema ? ' plus local extrema.' : '.'}`;
-    } else if (extrema) {
-        if (extrema.maxPoint) {
-            drawMarker(canvasContext, extrema.maxPoint, { color: '#dc2626', label: 'Max' });
+    const snappedFlat = extrema?.flatPoint ? snapPointToMask(extrema.flatPoint, mask, width, height) : null;
+    const snappedMax = extrema?.maxPoint ? snapPointToMask(extrema.maxPoint, mask, width, height) : null;
+    const snappedMin = extrema?.minPoint ? snapPointToMask(extrema.minPoint, mask, width, height) : null;
+    const snappedLocalMaxima = snapPointsToMask(localExtrema?.maxima, mask, width, height);
+    const snappedLocalMinima = snapPointsToMask(localExtrema?.minima, mask, width, height);
+
+    if (snappedFlat) {
+        drawMarker(canvasContext, snappedFlat, { color: '#c026d3', label: 'Flat extremum' });
+        imageStatusContainer.textContent = `Highlighted ${highlightSummary.highlightedCount.toLocaleString()} coloured pixels after filtering out grid lines. Marked a flat extremum${snappedLocalMaxima.length || snappedLocalMinima.length ? ' plus local extrema.' : '.'}`;
+    } else if (snappedMax || snappedMin) {
+        if (snappedMax) {
+            drawMarker(canvasContext, snappedMax, { color: '#dc2626', label: 'Max' });
         }
-        if (extrema.minPoint) {
-            drawMarker(canvasContext, extrema.minPoint, { color: '#1d4ed8', label: 'Min' });
+        if (snappedMin) {
+            drawMarker(canvasContext, snappedMin, { color: '#1d4ed8', label: 'Min' });
         }
         const extremaLabels = [
-            extrema.maxPoint ? 'maximum' : null,
-            extrema.minPoint ? 'minimum' : null,
+            snappedMax ? 'maximum' : null,
+            snappedMin ? 'minimum' : null,
         ].filter(Boolean);
         const labelText = extremaLabels.length ? ` Marked the ${extremaLabels.join(' and ')}.` : '';
         imageStatusContainer.textContent = `Highlighted ${highlightSummary.highlightedCount.toLocaleString()} coloured pixels after filtering out grid lines.${labelText}`;
     }
 
-    if (localExtrema) {
-        localExtrema.maxima.forEach((point, index) => {
+    if (snappedLocalMaxima.length || snappedLocalMinima.length) {
+        snappedLocalMaxima.forEach((point, index) => {
             drawMarker(canvasContext, point, { color: '#f97316', label: `Local max ${index + 1}` });
         });
-        localExtrema.minima.forEach((point, index) => {
+        snappedLocalMinima.forEach((point, index) => {
             drawMarker(canvasContext, point, { color: '#0ea5e9', label: `Local min ${index + 1}` });
         });
         const localParts = [];
-        if (localExtrema.maxima.length) {
-            localParts.push(`${localExtrema.maxima.length} local max${localExtrema.maxima.length > 1 ? 'ima' : 'imum'}`);
+        if (snappedLocalMaxima.length) {
+            localParts.push(`${snappedLocalMaxima.length} local max${snappedLocalMaxima.length > 1 ? 'ima' : 'imum'}`);
         }
-        if (localExtrema.minima.length) {
-            localParts.push(`${localExtrema.minima.length} local min${localExtrema.minima.length > 1 ? 'ima' : 'imum'}`);
+        if (snappedLocalMinima.length) {
+            localParts.push(`${snappedLocalMinima.length} local min${snappedLocalMinima.length > 1 ? 'ima' : 'imum'}`);
         }
-        const prefix = extrema ? ' Also marked' : 'Marked';
+        const prefix = snappedFlat || snappedMax || snappedMin ? ' Also marked' : 'Marked';
         const description = localParts.length ? `${prefix} ${localParts.join(' and ')}.` : '';
         imageStatusContainer.textContent = `${imageStatusContainer.textContent || `Highlighted ${highlightSummary.highlightedCount.toLocaleString()} coloured pixels after filtering out grid lines.`}${description}`.trim();
         return;
     }
 
-    if (!extrema) {
-        imageStatusContainer.textContent = `Highlighted ${highlightSummary.highlightedCount.toLocaleString()} coloured pixels after filtering out grid lines. No clear extrema detected.`;
+    if (!snappedFlat && !snappedMax && !snappedMin) {
+        imageStatusContainer.textContent = `Highlighted ${highlightSummary.highlightedCount.toLocaleString()} coloured pixels after filtering out grid lines. No clear extrema detected on the highlighted graph.`;
     }
 });
