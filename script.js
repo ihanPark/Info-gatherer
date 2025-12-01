@@ -46,7 +46,7 @@ function loadImageFile(file) {
         canvasContext.drawImage(img, 0, 0, width, height);
         currentImage = img;
         analyzeImageButton.disabled = false;
-        imageStatusContainer.textContent = 'Image loaded. Click "Highlight graph" to tint the curve while filtering out the grid.';
+        imageStatusContainer.textContent = 'Image loaded. Click "Highlight graph" to tint the curve that contrasts with the background.';
 
         URL.revokeObjectURL(imageUrl);
     };
@@ -93,17 +93,114 @@ dropZone.addEventListener('drop', (event) => {
     }
 });
 
-function getBrightness(r, g, b) {
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+function estimateBackgroundColor(data, width, height) {
+    let rSum = 0;
+    let gSum = 0;
+    let bSum = 0;
+    let count = 0;
+
+    for (let x = 0; x < width; x += 1) {
+        const topOffset = x * 4;
+        const bottomOffset = ((height - 1) * width + x) * 4;
+        rSum += data[topOffset];
+        gSum += data[topOffset + 1];
+        bSum += data[topOffset + 2];
+        rSum += data[bottomOffset];
+        gSum += data[bottomOffset + 1];
+        bSum += data[bottomOffset + 2];
+        count += 2;
+    }
+
+    for (let y = 0; y < height; y += 1) {
+        const leftOffset = (y * width) * 4;
+        const rightOffset = (y * width + (width - 1)) * 4;
+        rSum += data[leftOffset];
+        gSum += data[leftOffset + 1];
+        bSum += data[leftOffset + 2];
+        rSum += data[rightOffset];
+        gSum += data[rightOffset + 1];
+        bSum += data[rightOffset + 2];
+        count += 2;
+    }
+
+    return {
+        r: rSum / count,
+        g: gSum / count,
+        b: bSum / count,
+    };
+}
+
+function findLargestComponent(mask, width, height) {
+    const visited = new Uint8Array(mask.length);
+    let largest = { size: 0, pixels: [] };
+    const neighbors = [
+        [-1, -1], [0, -1], [1, -1],
+        [-1, 0], /* self */ [1, 0],
+        [-1, 1], [0, 1], [1, 1],
+    ];
+
+    for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+            const startIndex = y * width + x;
+            if (!mask[startIndex] || visited[startIndex]) {
+                continue;
+            }
+
+            const queue = [[x, y]];
+            visited[startIndex] = 1;
+            const pixels = [];
+
+            while (queue.length) {
+                const [cx, cy] = queue.shift();
+                const currentIndex = cy * width + cx;
+                pixels.push([cx, cy]);
+
+                neighbors.forEach(([dx, dy]) => {
+                    const nx = cx + dx;
+                    const ny = cy + dy;
+                    if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                        return;
+                    }
+                    const neighborIndex = ny * width + nx;
+                    if (!mask[neighborIndex] || visited[neighborIndex]) {
+                        return;
+                    }
+                    visited[neighborIndex] = 1;
+                    queue.push([nx, ny]);
+                });
+            }
+
+            if (pixels.length > largest.size) {
+                largest = { size: pixels.length, pixels };
+            }
+        }
+    }
+
+    const highlightMask = new Uint8Array(mask.length);
+    largest.pixels.forEach(([px, py]) => {
+        highlightMask[py * width + px] = 1;
+    });
+
+    return { highlightMask, size: largest.size };
+}
+
+function hasLargeGap(indices, maxGap) {
+    const sorted = Array.from(new Set(indices)).sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i += 1) {
+        if (sorted[i] - sorted[i - 1] > maxGap) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function detectGraphMask(ctx, width, height) {
     const imageData = ctx.getImageData(0, 0, width, height);
     const { data } = imageData;
     const candidateMask = new Uint8Array(width * height);
-    const highlightMask = new Uint8Array(width * height);
-    let brightnessSum = 0;
-    let pixelCount = 0;
+
+    const background = estimateBackgroundColor(data, width, height);
+    let candidateCount = 0;
 
     for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
@@ -116,63 +213,50 @@ function detectGraphMask(ctx, width, height) {
             const r = data[offset];
             const g = data[offset + 1];
             const b = data[offset + 2];
-            const brightness = getBrightness(r, g, b);
-            const maxChannel = Math.max(r, g, b);
-            const minChannel = Math.min(r, g, b);
-            const chroma = maxChannel - minChannel;
-            const saturation = maxChannel === 0 ? 0 : chroma / maxChannel;
 
-            if (maxChannel < 32) {
-                // Treat very dark pixels as grid lines or axes; skip them entirely.
-                continue;
-            }
-            if (brightness > 245) {
-                // Ignore near-white pixels from paper or background glare.
-                continue;
-            }
-            if (chroma < 12 && saturation < 0.08) {
-                // Low chroma pixels are usually the grey grid or axes.
+            const diffR = Math.abs(r - background.r);
+            const diffG = Math.abs(g - background.g);
+            const diffB = Math.abs(b - background.b);
+
+            if (diffR < 50 && diffG < 50 && diffB < 50) {
                 continue;
             }
 
             const index = y * width + x;
             candidateMask[index] = 1;
-            brightnessSum += brightness;
-            pixelCount += 1;
+            candidateCount += 1;
         }
     }
 
-    if (pixelCount === 0) {
+    if (candidateCount === 0) {
         return null;
     }
 
-    const averageBrightness = brightnessSum / pixelCount;
-    const threshold = Math.min(averageBrightness * 1.1, averageBrightness + 24);
-    let highlightedCount = 0;
+    const largestComponent = findLargestComponent(candidateMask, width, height);
+    if (!largestComponent.size) {
+        return null;
+    }
 
-    for (let y = 0; y < height; y += 1) {
-        for (let x = 0; x < width; x += 1) {
-            const index = y * width + x;
-            if (!candidateMask[index]) {
-                continue;
-            }
-
-            const offset = index * 4;
-            const brightness = getBrightness(data[offset], data[offset + 1], data[offset + 2]);
-            if (brightness <= threshold) {
-                highlightMask[index] = 1;
-                highlightedCount += 1;
-            }
+    const componentColumns = [];
+    const componentRows = [];
+    largestComponent.highlightMask.forEach((value, idx) => {
+        if (!value) {
+            return;
         }
-    }
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+        componentColumns.push(x);
+        componentRows.push(y);
+    });
 
-    if (highlightedCount === 0) {
+    if (hasLargeGap(componentColumns, 30) || hasLargeGap(componentRows, 30)) {
         return null;
     }
+
     return {
-        highlightedCount,
-        totalCount: pixelCount,
-        highlightMask,
+        highlightedCount: largestComponent.size,
+        totalCount: candidateCount,
+        highlightMask: largestComponent.highlightMask,
     };
 }
 
@@ -221,5 +305,5 @@ analyzeImageButton.addEventListener('click', () => {
     const mask = highlightSummary.highlightMask;
     applyGraphHighlight(canvasContext, mask, width, height);
 
-    imageStatusContainer.textContent = 'Highlighted the detected curve after filtering out grid lines.';
+    imageStatusContainer.textContent = 'Highlighted the detected curve using background contrast and continuity checks.';
 });
