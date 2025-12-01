@@ -1,4 +1,3 @@
-const DOT_TARGET_COUNT = 400;
 const graphImageInput = document.getElementById('graphImage');
 const analyzeImageButton = document.getElementById('analyzeImage');
 const graphCanvas = document.getElementById('graphCanvas');
@@ -47,7 +46,7 @@ function loadImageFile(file) {
         canvasContext.drawImage(img, 0, 0, width, height);
         currentImage = img;
         analyzeImageButton.disabled = false;
-        imageStatusContainer.textContent = 'Image loaded. Click "Mark graph with dots & mark extrema" to annotate the curve and its peaks.';
+        imageStatusContainer.textContent = 'Image loaded. Click "Highlight graph & mark extrema" to tint the curve and flag its peaks.';
 
         URL.revokeObjectURL(imageUrl);
     };
@@ -177,46 +176,27 @@ function detectGraphMask(ctx, width, height) {
     };
 }
 
-function sampleGraphDots(mask, width, height, desiredCount = DOT_TARGET_COUNT) {
-    const coords = [];
+function applyGraphHighlight(ctx, mask, width, height) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const { data } = imageData;
+
     for (let index = 0; index < mask.length; index += 1) {
-        if (mask[index]) {
-            coords.push({ x: index % width, y: Math.floor(index / width) });
+        if (!mask[index]) {
+            continue;
         }
+
+        const offset = index * 4;
+        const r = data[offset];
+        const g = data[offset + 1];
+        const b = data[offset + 2];
+
+        data[offset] = Math.min(255, r * 0.35 + 50);
+        data[offset + 1] = Math.min(255, g * 0.35 + 200);
+        data[offset + 2] = Math.min(255, b * 0.35 + 110);
+        data[offset + 3] = 255;
     }
 
-    if (!coords.length) {
-        return [];
-    }
-
-    if (coords.length <= desiredCount) {
-        return coords;
-    }
-
-    const step = coords.length / desiredCount;
-    const sampled = [];
-    for (let i = 0; i < desiredCount; i += 1) {
-        const coord = coords[Math.floor(i * step)];
-        if (coord) {
-            sampled.push(coord);
-        }
-    }
-    return sampled;
-}
-
-function drawGraphDots(ctx, dots) {
-    if (!dots.length) {
-        return;
-    }
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(34, 197, 94, 0.95)';
-    dots.forEach((point) => {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-    });
-    ctx.restore();
+    ctx.putImageData(imageData, 0, 0);
 }
 
 function findExtremaFromMask(mask, width, height) {
@@ -548,14 +528,7 @@ analyzeImageButton.addEventListener('click', () => {
     }
 
     const mask = highlightSummary.highlightMask;
-    const graphDots = sampleGraphDots(mask, width, height, DOT_TARGET_COUNT);
-
-    if (!graphDots.length) {
-        imageMessageContainer.textContent = 'Detected potential curve pixels but could not place dots. Try a clearer image with stronger colour contrast.';
-        return;
-    }
-
-    drawGraphDots(canvasContext, graphDots);
+    applyGraphHighlight(canvasContext, mask, width, height);
 
     const extrema = findExtremaFromMask(mask, width, height);
     const profile = buildCurveProfile(mask, width, height);
@@ -566,11 +539,9 @@ analyzeImageButton.addEventListener('click', () => {
     const snappedMin = extrema?.minPoint ? snapPointToMask(extrema.minPoint, mask, width, height) : null;
     const snappedLocalMaxima = snapPointsToMask(localExtrema?.maxima, mask, width, height);
     const snappedLocalMinima = snapPointsToMask(localExtrema?.minima, mask, width, height);
-    const dotsCount = graphDots.length;
-
     if (snappedFlat) {
         drawMarker(canvasContext, snappedFlat, { color: '#c026d3', label: 'Flat extremum' });
-        imageStatusContainer.textContent = `Marked ${dotsCount} dots along the detected curve after filtering out grid lines. Marked a flat extremum${snappedLocalMaxima.length || snappedLocalMinima.length ? ' plus local extrema.' : '.'}`;
+        imageStatusContainer.textContent = `Highlighted the detected curve after filtering out grid lines. Marked a flat extremum${snappedLocalMaxima.length || snappedLocalMinima.length ? ' plus local extrema.' : '.'}`;
     } else if (snappedMax || snappedMin) {
         if (snappedMax) {
             drawMarker(canvasContext, snappedMax, { color: '#dc2626', label: 'Max' });
@@ -583,7 +554,7 @@ analyzeImageButton.addEventListener('click', () => {
             snappedMin ? 'minimum' : null,
         ].filter(Boolean);
         const labelText = extremaLabels.length ? ` Marked the ${extremaLabels.join(' and ')}.` : '';
-        imageStatusContainer.textContent = `Marked ${dotsCount} dots along the detected curve after filtering out grid lines.${labelText}`;
+        imageStatusContainer.textContent = `Highlighted the detected curve after filtering out grid lines.${labelText}`;
     }
 
     if (snappedLocalMaxima.length || snappedLocalMinima.length) {
@@ -600,13 +571,13 @@ analyzeImageButton.addEventListener('click', () => {
         if (snappedLocalMinima.length) {
             localParts.push(`${snappedLocalMinima.length} local min${snappedLocalMinima.length > 1 ? 'ima' : 'imum'}`);
         }
-        const prefix = snappedFlat || snappedMax || snappedMin ? ' Also marked' : 'Marked';
+        const prefix = snappedFlat || snappedMax || snappedMin ? ' Also marked' : 'Highlighted the detected curve. Marked';
         const description = localParts.length ? `${prefix} ${localParts.join(' and ')}.` : '';
-        imageStatusContainer.textContent = `${imageStatusContainer.textContent || `Marked ${dotsCount} dots along the detected curve after filtering out grid lines.`}${description}`.trim();
+        imageStatusContainer.textContent = `${imageStatusContainer.textContent || 'Highlighted the detected curve after filtering out grid lines.'}${description}`.trim();
         return;
     }
 
     if (!snappedFlat && !snappedMax && !snappedMin) {
-        imageStatusContainer.textContent = `Marked ${dotsCount} dots along the detected curve after filtering out grid lines. No clear extrema detected on the detected graph.`;
+        imageStatusContainer.textContent = 'Highlighted the detected curve after filtering out grid lines. No clear extrema detected on the detected graph.';
     }
 });
