@@ -311,6 +311,25 @@ function applyGraphHighlight(ctx, mask, width, height) {
     ctx.putImageData(imageData, 0, 0);
 }
 
+function whitenBackground(ctx, mask, width, height) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const { data } = imageData;
+
+    for (let index = 0; index < mask.length; index += 1) {
+        if (mask[index]) {
+            continue;
+        }
+
+        const offset = index * 4;
+        data[offset] = 255;
+        data[offset + 1] = 255;
+        data[offset + 2] = 255;
+        data[offset + 3] = 255;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
 function findGlobalExtrema(mask, width, height) {
     let highestPoint = null;
     let lowestPoint = null;
@@ -415,11 +434,12 @@ markExtremaButton.addEventListener('click', () => {
 
     canvasContext.clearRect(0, 0, width, height);
     canvasContext.drawImage(currentImage, 0, 0, width, height);
+    whitenBackground(canvasContext, mask, width, height);
     applyGraphHighlight(canvasContext, mask, width, height);
 
     const marked = markExtrema(canvasContext, mask, width, height);
     if (marked) {
-        imageStatusContainer.textContent = 'Graph highlighted. Marked the maximum and minimum points on the detected curve.';
+        imageStatusContainer.textContent = 'Graph highlighted on a white background. Marked the maximum and minimum points on the detected curve.';
     } else {
         imageStatusContainer.textContent = 'Graph highlighted, but no extrema points were identified on the detected curve.';
     }
