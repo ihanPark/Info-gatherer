@@ -434,8 +434,8 @@ markExtremaButton.addEventListener('click', () => {
 
     canvasContext.clearRect(0, 0, width, height);
     canvasContext.drawImage(currentImage, 0, 0, width, height);
-    whitenBackground(canvasContext, mask, width, height);
     applyGraphHighlight(canvasContext, mask, width, height);
+    whitenBackground(canvasContext, mask, width, height);
 
     const marked = markExtrema(canvasContext, mask, width, height);
     if (marked) {
