@@ -46,7 +46,7 @@ function loadImageFile(file) {
         canvasContext.drawImage(img, 0, 0, width, height);
         currentImage = img;
         analyzeImageButton.disabled = false;
-        imageStatusContainer.textContent = 'Image loaded. Click "Highlight graph" to tint the curve that contrasts with the background, then confirm to mark extrema if it looks correct.';
+        imageStatusContainer.textContent = 'Image loaded. Click "Highlight graph" to tint the curve that contrasts with the background, then type "correct" when prompted to mark extrema.';
 
         URL.revokeObjectURL(imageUrl);
     };
@@ -393,7 +393,8 @@ analyzeImageButton.addEventListener('click', () => {
     const mask = highlightSummary.highlightMask;
     applyGraphHighlight(canvasContext, mask, width, height);
 
-    const userSatisfied = window.confirm('Is the highlighted curve correct? Click OK to mark maximum and minimum points.');
+    const userFeedback = window.prompt('Is the highlighted curve correct? Type "correct" to mark maximum and minimum points.');
+    const userSatisfied = typeof userFeedback === 'string' && userFeedback.trim().toLowerCase() === 'correct';
 
     if (userSatisfied) {
         const marked = markExtrema(canvasContext, mask, width, height);
@@ -403,6 +404,6 @@ analyzeImageButton.addEventListener('click', () => {
             imageStatusContainer.textContent = 'Graph highlighted, but no extrema points were identified on the detected curve.';
         }
     } else {
-        imageStatusContainer.textContent = 'Graph highlighted. Extrema marking skipped per your choice.';
+        imageStatusContainer.textContent = 'Graph highlighted. Extrema marking skipped because feedback was not "correct".';
     }
 });
