@@ -50,7 +50,7 @@ function loadImageFile(file) {
         canvasContext.drawImage(img, 0, 0, width, height);
         currentImage = img;
         analyzeImageButton.disabled = false;
-        imageStatusContainer.textContent = 'Image loaded. Click "Highlight graph" to tint the curve that contrasts with the background, then click "Mark Extremum" if the highlighted curve looks correct.';
+        imageStatusContainer.textContent = 'Image loaded. Click "Highlight graph" to tint the curve that contrasts with the background, then use the "Mark Extremum" button beneath the canvas to place markers if the highlight looks right.';
 
         URL.revokeObjectURL(imageUrl);
     };
@@ -400,7 +400,7 @@ analyzeImageButton.addEventListener('click', () => {
     applyGraphHighlight(canvasContext, mask, width, height);
     lastHighlightMask = { mask, width, height };
     markExtremaButton.disabled = false;
-    imageStatusContainer.textContent = 'Graph highlighted. If it looks correct, click "Mark Extremum" to place the maximum and minimum points on the curve.';
+    imageStatusContainer.textContent = 'Graph highlighted. Use the "Mark Extremum" button beneath the canvas to place the maximum and minimum points on the curve—no pop-ups needed.';
 });
 
 markExtremaButton.addEventListener('click', () => {
