@@ -330,6 +330,29 @@ function whitenBackground(ctx, mask, width, height) {
     ctx.putImageData(imageData, 0, 0);
 }
 
+function drawVerticalDivisions(ctx, width, height, sections = 20) {
+    if (sections <= 0) {
+        return;
+    }
+
+    const step = width / sections;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.7)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+
+    for (let i = 1; i < sections; i += 1) {
+        const x = Math.round(i * step) + 0.5;
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+}
+
 function findGlobalExtrema(mask, width, height) {
     let highestPoint = null;
     let lowestPoint = null;
@@ -417,6 +440,7 @@ analyzeImageButton.addEventListener('click', () => {
 
     const mask = highlightSummary.highlightMask;
     applyGraphHighlight(canvasContext, mask, width, height);
+    drawVerticalDivisions(canvasContext, width, height, 20);
     lastHighlightMask = { mask, width, height };
     markExtremaButton.disabled = false;
     imageStatusContainer.textContent = 'Graph highlighted. Use the "Mark Extremum" button beneath the canvas to place the maximum and minimum points on the curve—no pop-ups needed.';
@@ -436,6 +460,7 @@ markExtremaButton.addEventListener('click', () => {
     canvasContext.drawImage(currentImage, 0, 0, width, height);
     applyGraphHighlight(canvasContext, mask, width, height);
     whitenBackground(canvasContext, mask, width, height);
+    drawVerticalDivisions(canvasContext, width, height, 20);
 
     const marked = markExtrema(canvasContext, mask, width, height);
     if (marked) {
