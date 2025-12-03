@@ -354,6 +354,29 @@ function drawVerticalDivisions(ctx, width, height, sections = SECTION_COUNT) {
     ctx.restore();
 }
 
+function drawHorizontalDivisions(ctx, width, height, sections = SECTION_COUNT) {
+    if (sections <= 0) {
+        return;
+    }
+
+    const step = height / sections;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.7)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+
+    for (let i = 1; i < sections; i += 1) {
+        const y = Math.round(i * step) + 0.5;
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+}
+
 function drawMarker(ctx, { x, y }, color, label) {
     ctx.save();
     ctx.fillStyle = color;
@@ -495,9 +518,10 @@ analyzeImageButton.addEventListener('click', () => {
     const mask = highlightSummary.highlightMask;
     applyGraphHighlight(canvasContext, mask, width, height);
     drawVerticalDivisions(canvasContext, width, height, SECTION_COUNT);
+    drawHorizontalDivisions(canvasContext, width, height, SECTION_COUNT);
     lastHighlightMask = { mask, width, height };
     markExtremaButton.disabled = false;
-    imageStatusContainer.textContent = 'Graph highlighted. Use the "Mark Extremum" button beneath the canvas to place maximum and minimum markers within each vertical section of the curve—no pop-ups needed.';
+    imageStatusContainer.textContent = 'Graph highlighted and divided into 40 vertical and 40 horizontal guide sections. Use the "Mark Extremum" button beneath the canvas to place maximum and minimum markers within each vertical section—no pop-ups needed.';
 });
 
 markExtremaButton.addEventListener('click', () => {
@@ -515,13 +539,14 @@ markExtremaButton.addEventListener('click', () => {
     applyGraphHighlight(canvasContext, mask, width, height);
     whitenBackground(canvasContext, mask, width, height);
     drawVerticalDivisions(canvasContext, width, height, SECTION_COUNT);
+    drawHorizontalDivisions(canvasContext, width, height, SECTION_COUNT);
 
     const { markerCount, missingSections } = markExtrema(canvasContext, mask, width, height, SECTION_COUNT);
     if (markerCount) {
         const missingNote = missingSections.length
             ? ` Sections without detected graph pixels: ${missingSections.join(', ')}.`
             : '';
-        imageStatusContainer.textContent = `Graph highlighted on a white background. Marked ${markerCount} extrema (one maximum and one minimum per populated section). Consecutive minima without intervening maxima appear in orange.${missingNote}`;
+        imageStatusContainer.textContent = `Graph highlighted on a white background with 40 vertical and 40 horizontal guide lines. Marked ${markerCount} extrema (one maximum and one minimum per populated vertical section). Consecutive minima without intervening maxima appear in orange.${missingNote}`;
     } else {
         imageStatusContainer.textContent = 'Graph highlighted, but no extrema points were identified on the detected curve.';
     }
