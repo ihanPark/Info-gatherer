@@ -416,8 +416,37 @@ function findSectionExtrema(mask, width, height, sections = 20) {
     return { extrema, missingSections };
 }
 
+function findOrangeMinima(extrema) {
+    let currentRun = [];
+    const orangeKeys = new Set();
+
+    extrema.forEach(({ highestPoint, lowestPoint }) => {
+        if (highestPoint) {
+            if (currentRun.length >= 2) {
+                currentRun.forEach((point) => {
+                    orangeKeys.add(`${point.section}-${point.x}-${point.y}`);
+                });
+            }
+            currentRun = [];
+        }
+
+        if (lowestPoint) {
+            currentRun.push(lowestPoint);
+        }
+    });
+
+    if (currentRun.length >= 2) {
+        currentRun.forEach((point) => {
+            orangeKeys.add(`${point.section}-${point.x}-${point.y}`);
+        });
+    }
+
+    return orangeKeys;
+}
+
 function markExtrema(ctx, mask, width, height, sections = 20) {
     const { extrema, missingSections } = findSectionExtrema(mask, width, height, sections);
+    const orangeMinima = findOrangeMinima(extrema);
 
     let markerCount = 0;
 
@@ -430,7 +459,9 @@ function markExtrema(ctx, mask, width, height, sections = 20) {
         }
 
         if (lowestPoint) {
-            drawMarker(ctx, lowestPoint, '#0ea5e9', `Min${labelSuffix}`);
+            const key = `${section}-${lowestPoint.x}-${lowestPoint.y}`;
+            const color = orangeMinima.has(key) && orangeMinima.size >= 2 ? '#f97316' : '#0ea5e9';
+            drawMarker(ctx, lowestPoint, color, `Min${labelSuffix}`);
             markerCount += 1;
         }
     });
@@ -489,7 +520,7 @@ markExtremaButton.addEventListener('click', () => {
         const missingNote = missingSections.length
             ? ` Sections without detected graph pixels: ${missingSections.join(', ')}.`
             : '';
-        imageStatusContainer.textContent = `Graph highlighted on a white background. Marked ${markerCount} extrema (one maximum and one minimum per populated section).${missingNote}`;
+        imageStatusContainer.textContent = `Graph highlighted on a white background. Marked ${markerCount} extrema (one maximum and one minimum per populated section). Consecutive minima without intervening maxima appear in orange.${missingNote}`;
     } else {
         imageStatusContainer.textContent = 'Graph highlighted, but no extrema points were identified on the detected curve.';
     }
