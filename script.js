@@ -429,27 +429,16 @@ function findOrangeMinima(extrema) {
 
     points.sort((a, b) => a.x - b.x || a.y - b.y);
 
-    let currentRun = [];
     const orangeKeys = new Set();
 
-    points.forEach((point) => {
-        if (point.type === 'max') {
-            if (currentRun.length >= 2) {
-                currentRun.forEach((minPoint) => {
-                    orangeKeys.add(`${minPoint.section}-${minPoint.x}-${minPoint.y}`);
-                });
-            }
-            currentRun = [];
-            return;
+    for (let i = 0; i < points.length - 1; i += 1) {
+        const current = points[i];
+        const next = points[i + 1];
+
+        if (current.type === 'min' && next.type === 'min') {
+            orangeKeys.add(`${current.section}-${current.x}-${current.y}`);
+            orangeKeys.add(`${next.section}-${next.x}-${next.y}`);
         }
-
-        currentRun.push(point);
-    });
-
-    if (currentRun.length >= 2) {
-        currentRun.forEach((minPoint) => {
-            orangeKeys.add(`${minPoint.section}-${minPoint.x}-${minPoint.y}`);
-        });
     }
 
     return orangeKeys;
