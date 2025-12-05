@@ -384,6 +384,59 @@ function detectGraphMask(ctx, width, height) {
         if (y > maxY) maxY = y;
     });
 
+    const rejectAxisAlignedLine = () => {
+        const verticalSpan = maxY - minY;
+        const horizontalSpan = maxX - minX;
+
+        if (horizontalSpan <= 2) {
+            const rowsCovered = new Uint8Array(height);
+            let rowCount = 0;
+
+            for (let y = 0; y < height; y += 1) {
+                for (let x = minX; x <= maxX; x += 1) {
+                    if (prunedMask[y * width + x]) {
+                        if (!rowsCovered[y]) {
+                            rowsCovered[y] = 1;
+                            rowCount += 1;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (rowCount / height >= 0.95 && minY <= 2 && maxY >= height - 3) {
+                return true;
+            }
+        }
+
+        if (verticalSpan <= 2) {
+            const colsCovered = new Uint8Array(width);
+            let colCount = 0;
+
+            for (let x = 0; x < width; x += 1) {
+                for (let y = minY; y <= maxY; y += 1) {
+                    if (prunedMask[y * width + x]) {
+                        if (!colsCovered[x]) {
+                            colsCovered[x] = 1;
+                            colCount += 1;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (colCount / width >= 0.95 && minX <= 2 && maxX >= width - 3) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    if (rejectAxisAlignedLine()) {
+        return null;
+    }
+
     if (hasLargeGap(componentColumns, 30) || hasLargeGap(componentRows, 30)) {
         return null;
     }
@@ -695,8 +748,8 @@ analyzeImageButton.addEventListener('click', () => {
 
     const highlightSummary = detectGraphMask(canvasContext, width, height);
     if (!highlightSummary) {
-        imageMessageContainer.textContent = 'No graph detected. Try an image where the curve contrasts strongly with the background, runs across the width, and shows visible movement.';
-        imageStatusContainer.textContent = 'Detection failed: no contrasting, continuous curve spanning the image with clear variation was found.';
+        imageMessageContainer.textContent = 'No graph detected. Try an image where the curve contrasts strongly with the background, runs across the width, and shows visible movement (single straight axes are ignored).';
+        imageStatusContainer.textContent = 'Detection failed: no contrasting, continuous curve spanning the image with clear variation was found—perfectly horizontal or vertical lines are treated as non-graph content.';
         extremumChartContainer.textContent = '';
         return;
     }
@@ -708,7 +761,7 @@ analyzeImageButton.addEventListener('click', () => {
     lastHighlightMask = { mask, width, height, verticalSections, horizontalSections };
     markExtremaButton.disabled = false;
     extremumChartContainer.textContent = 'Click "Mark Extremum" to list coordinates for each detected maximum and minimum.';
-    imageStatusContainer.textContent = `Graph highlighted and divided into ${verticalSections} vertical and ${horizontalSections} horizontal guide sections. Very flat stretches (within ±5 px over 100 px) are ignored before marking. Use the "Mark Extremum" button beneath the canvas to place maximum and minimum markers within each vertical section—no pop-ups needed.`;
+    imageStatusContainer.textContent = `Graph highlighted and divided into ${verticalSections} vertical and ${horizontalSections} horizontal guide sections. Very flat stretches (within ±5 px over 100 px) and perfectly horizontal or vertical lines spanning the canvas are ignored before marking. Use the "Mark Extremum" button beneath the canvas to place maximum and minimum markers within each vertical section—no pop-ups needed.`;
 });
 
 markExtremaButton.addEventListener('click', () => {
