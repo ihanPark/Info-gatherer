@@ -232,6 +232,10 @@ function detectGraphMask(ctx, width, height) {
             const g = data[offset + 1];
             const b = data[offset + 2];
 
+            if (Math.abs(r - g) <= 5 && Math.abs(r - b) <= 5 && Math.abs(g - b) <= 5) {
+                continue;
+            }
+
             const diffR = Math.abs(r - background.r);
             const diffG = Math.abs(g - background.g);
             const diffB = Math.abs(b - background.b);
@@ -588,8 +592,8 @@ analyzeImageButton.addEventListener('click', () => {
 
     const highlightSummary = detectGraphMask(canvasContext, width, height);
     if (!highlightSummary) {
-        imageMessageContainer.textContent = 'No graph detected. Try an image where the curve contrasts strongly with the background, runs across the width, and shows visible movement.';
-        imageStatusContainer.textContent = 'Detection failed: no contrasting, continuous curve spanning the image with clear variation was found.';
+        imageMessageContainer.textContent = 'No graph detected. Try an image where the curve contrasts strongly with the background, uses colour (not grayscale), runs across the width, and shows visible movement.';
+        imageStatusContainer.textContent = 'Detection failed: no contrasting, continuous curve spanning the image with clear variation was found; grayscale strokes within the image edges are ignored.';
         extremumChartContainer.textContent = '';
         return;
     }
