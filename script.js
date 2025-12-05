@@ -212,6 +212,100 @@ function hasLargeGap(indices, maxGap) {
     return false;
 }
 
+function pruneFlatSegments(mask, width, height) {
+    const columnStats = Array.from({ length: width }, () => ({
+        count: 0,
+        min: height,
+        max: -1,
+    }));
+
+    mask.forEach((value, idx) => {
+        if (!value) {
+            return;
+        }
+
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+        const stats = columnStats[x];
+
+        stats.count += 1;
+        stats.min = Math.min(stats.min, y);
+        stats.max = Math.max(stats.max, y);
+    });
+
+    const columnsToRemove = new Uint8Array(width);
+
+    let runStart = null;
+    let runMin = null;
+    let runMax = null;
+
+    const finalizeRun = (endIndex) => {
+        if (runStart === null) {
+            return;
+        }
+
+        const runLength = endIndex - runStart + 1;
+        if (runLength >= 100 && runMax - runMin <= 5) {
+            for (let x = runStart; x <= endIndex; x += 1) {
+                columnsToRemove[x] = 1;
+            }
+        }
+
+        runStart = null;
+        runMin = null;
+        runMax = null;
+    };
+
+    for (let x = 0; x < width; x += 1) {
+        const stats = columnStats[x];
+        if (!stats.count) {
+            finalizeRun(x - 1);
+            continue;
+        }
+
+        const colMin = stats.min;
+        const colMax = stats.max;
+
+        if (runStart === null) {
+            runStart = x;
+            runMin = colMin;
+            runMax = colMax;
+            continue;
+        }
+
+        const nextMin = Math.min(runMin, colMin);
+        const nextMax = Math.max(runMax, colMax);
+
+        if (nextMax - nextMin > 5) {
+            finalizeRun(x - 1);
+            runStart = x;
+            runMin = colMin;
+            runMax = colMax;
+        } else {
+            runMin = nextMin;
+            runMax = nextMax;
+        }
+    }
+
+    finalizeRun(width - 1);
+
+    const prunedMask = new Uint8Array(mask.length);
+    mask.forEach((value, idx) => {
+        if (!value) {
+            return;
+        }
+
+        const x = idx % width;
+        if (columnsToRemove[x]) {
+            return;
+        }
+
+        prunedMask[idx] = 1;
+    });
+
+    return prunedMask;
+}
+
 function detectGraphMask(ctx, width, height) {
     const imageData = ctx.getImageData(0, 0, width, height);
     const { data } = imageData;
@@ -255,6 +349,19 @@ function detectGraphMask(ctx, width, height) {
         return null;
     }
 
+    const prunedMask = pruneFlatSegments(largestComponent.highlightMask, width, height);
+    let prunedCount = 0;
+
+    prunedMask.forEach((value) => {
+        if (value) {
+            prunedCount += 1;
+        }
+    });
+
+    if (prunedCount === 0) {
+        return null;
+    }
+
     const componentColumns = [];
     const componentRows = [];
     let minX = width;
@@ -262,7 +369,7 @@ function detectGraphMask(ctx, width, height) {
     let minY = height;
     let maxY = -1;
 
-    largestComponent.highlightMask.forEach((value, idx) => {
+    prunedMask.forEach((value, idx) => {
         if (!value) {
             return;
         }
@@ -296,9 +403,9 @@ function detectGraphMask(ctx, width, height) {
     }
 
     return {
-        highlightedCount: largestComponent.size,
+        highlightedCount: prunedCount,
         totalCount: candidateCount,
-        highlightMask: largestComponent.highlightMask,
+        highlightMask: prunedMask,
     };
 }
 
@@ -601,7 +708,7 @@ analyzeImageButton.addEventListener('click', () => {
     lastHighlightMask = { mask, width, height, verticalSections, horizontalSections };
     markExtremaButton.disabled = false;
     extremumChartContainer.textContent = 'Click "Mark Extremum" to list coordinates for each detected maximum and minimum.';
-    imageStatusContainer.textContent = `Graph highlighted and divided into ${verticalSections} vertical and ${horizontalSections} horizontal guide sections. Use the "Mark Extremum" button beneath the canvas to place maximum and minimum markers within each vertical section—no pop-ups needed.`;
+    imageStatusContainer.textContent = `Graph highlighted and divided into ${verticalSections} vertical and ${horizontalSections} horizontal guide sections. Very flat stretches (within ±5 px over 100 px) are ignored before marking. Use the "Mark Extremum" button beneath the canvas to place maximum and minimum markers within each vertical section—no pop-ups needed.`;
 });
 
 markExtremaButton.addEventListener('click', () => {

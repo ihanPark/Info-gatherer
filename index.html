@@ -18,7 +18,7 @@
                 <input id="graphImage" type="file" accept="image/*" aria-label="Graph image file input" />
             </div>
             <button id="analyzeImage" disabled>Highlight graph</button>
-            <p class="hint">Highlighting splits the canvas into guide sections proportional to the image size (about one section per 18 pixels in width and height); only the vertical sections are used to place maxima and minima. Make sure the curve stands out from the background for best results.</p>
+            <p class="hint">Highlighting splits the canvas into guide sections proportional to the image size (about one section per 18 pixels in width and height); only the vertical sections are used to place maxima and minima. Make sure the curve stands out from the background, and note that any stretch flatter than ±5 px in y across 100+ px in x will be ignored.</p>
             <canvas id="graphCanvas" class="graph-canvas" aria-label="Uploaded graph image"></canvas>
             <p id="imageDimensions" class="dimensions" aria-live="polite"></p>
             <button id="markExtrema" disabled>Mark Extremum</button>
