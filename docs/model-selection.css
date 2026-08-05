@@ -1,0 +1,526 @@
+/* =========================
+   1. Design tokens
+========================= */
+
+:root {
+  --navy-950: #081b33;
+  --navy-900: #0d2748;
+  --navy-800: #12365f;
+
+  --blue-600: #2563eb;
+
+  --optimistic: #10b981;
+  --balanced: #3b82f6;
+  --conservative: #f97316;
+
+  --background: #f3f6fa;
+  --surface: #ffffff;
+
+  --text-primary: #10233f;
+  --text-secondary: #64748b;
+
+  --border: #dce4ee;
+
+  --shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 12px rgba(15, 23, 42, 0.04);
+
+  --shadow-lg:
+    0 18px 40px rgba(15, 39, 72, 0.12),
+    0 4px 12px rgba(15, 39, 72, 0.06);
+
+  --radius-lg: 22px;
+  --transition: 220ms ease;
+}
+
+
+/* =========================
+   2. Global styles
+========================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 90% 12%,
+      rgba(59, 130, 246, 0.08),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 5% 88%,
+      rgba(16, 185, 129, 0.05),
+      transparent 25rem
+    ),
+    var(--background);
+
+  color: var(--text-primary);
+
+  font-family:
+    Inter,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+}
+
+
+/* =========================
+   3. Header
+========================= */
+
+header {
+  position: relative;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  width: 100%;
+  height: 190px;
+
+  padding: 0 24px 30px;
+
+  background:
+    linear-gradient(
+      110deg,
+      var(--navy-950) 0,
+      var(--navy-900) 58%,
+      var(--navy-800) 100%
+    )
+    top / 100% 72px no-repeat;
+
+  color: var(--text-primary);
+
+  font-size: clamp(27px, 3vw, 38px);
+  font-weight: 780;
+  letter-spacing: -0.045em;
+  text-align: center;
+}
+
+/* Logo mark */
+header::before {
+  content: "";
+
+  position: absolute;
+  top: 19px;
+  left: max(6vw, 32px);
+
+  width: 34px;
+  height: 34px;
+
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(56, 189, 248, 0.95),
+      rgba(37, 99, 235, 0.35)
+    );
+
+  transform: rotate(-4deg);
+}
+
+/* Brand name */
+header::after {
+  content: "SA ANALYTICS";
+
+  position: absolute;
+  top: 27px;
+  left: max(calc(6vw + 48px), 80px);
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+}
+
+
+/* =========================
+   4. Model layout
+========================= */
+
+.model-selection-container {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 26px;
+
+  width: min(88%, 1080px);
+
+  margin: 0 auto;
+  padding: 18px 0 38px;
+}
+
+
+/* =========================
+   5. Shared model cards
+========================= */
+
+.model-card {
+  --accent: var(--balanced);
+  --accent-soft: rgba(59, 130, 246, 0.12);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  display: flex;
+  align-items: flex-end;
+
+  min-width: 0;
+  min-height: 390px;
+
+  padding: 35px 32px 92px;
+
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: var(--radius-lg);
+
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--text-primary);
+
+  box-shadow: var(--shadow-sm);
+
+  font-size: clamp(21px, 2vw, 27px);
+  font-weight: 780;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+/* Colored top accent */
+.model-card::before {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 7px;
+
+  background: var(--accent);
+
+  transition: height 320ms ease;
+}
+
+/* Circular arrow */
+.model-card::after {
+  content: "→";
+
+  position: absolute;
+  right: 28px;
+  bottom: 27px;
+
+  display: grid;
+  place-items: center;
+
+  width: 45px;
+  height: 45px;
+
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--accent);
+
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+
+  transition:
+    background-color var(--transition),
+    color var(--transition),
+    transform var(--transition);
+}
+
+.model-card:hover {
+  transform: translateY(-7px);
+
+  border-color: var(--accent);
+
+  box-shadow: var(--shadow-lg);
+}
+
+.model-card:hover::before {
+  height: 13px;
+}
+
+.model-card:hover::after {
+  background: var(--accent);
+  color: #ffffff;
+
+  transform: translateX(4px);
+}
+
+.model-card:active {
+  transform: translateY(-2px);
+}
+
+.model-card:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 4px;
+}
+
+
+/* =========================
+   6. Model descriptions
+========================= */
+
+/*
+   The additional descriptions are generated
+   without changing the HTML.
+*/
+
+.optimistic-card {
+  --accent: var(--optimistic);
+  --accent-soft: rgba(16, 185, 129, 0.18);
+}
+
+.optimistic-card {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(16, 185, 129, 0.07),
+      transparent 48%
+    ),
+    rgba(255, 255, 255, 0.96);
+}
+
+.balanced-card {
+  --accent: var(--balanced);
+  --accent-soft: rgba(59, 130, 246, 0.18);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(59, 130, 246, 0.07),
+      transparent 48%
+    ),
+    rgba(255, 255, 255, 0.96);
+}
+
+.conservative-card {
+  --accent: var(--conservative);
+  --accent-soft: rgba(249, 115, 22, 0.18);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(249, 115, 22, 0.07),
+      transparent 48%
+    ),
+    rgba(255, 255, 255, 0.96);
+}
+
+
+/* =========================
+   7. Model icon decorations
+========================= */
+
+.model-card {
+  background-position: center;
+}
+
+/* Decorative circles */
+.model-card span {
+  pointer-events: none;
+}
+
+.optimistic-card {
+  box-shadow:
+    inset 0 7px 0 var(--optimistic),
+    var(--shadow-sm);
+}
+
+.balanced-card {
+  box-shadow:
+    inset 0 7px 0 var(--balanced),
+    var(--shadow-sm);
+}
+
+.conservative-card {
+  box-shadow:
+    inset 0 7px 0 var(--conservative),
+    var(--shadow-sm);
+}
+
+.optimistic-card:hover,
+.balanced-card:hover,
+.conservative-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+
+/* =========================
+   8. Back button
+========================= */
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 112px;
+
+  margin: 0 auto 52px;
+  padding: 12px 20px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--navy-900);
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+
+  cursor: pointer;
+
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    background-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition);
+}
+
+.back-button:hover {
+  transform: translateY(-2px);
+
+  border-color: var(--navy-900);
+
+  background: var(--navy-900);
+  color: #ffffff;
+
+  box-shadow: 0 8px 18px rgba(13, 39, 72, 0.16);
+}
+
+.back-button:active {
+  transform: translateY(0);
+}
+
+.back-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.25);
+  outline-offset: 3px;
+}
+
+
+/* =========================
+   9. Responsive design
+========================= */
+
+@media (max-width: 900px) {
+  header {
+    height: 172px;
+
+    padding-bottom: 25px;
+
+    background-size: 100% 64px;
+  }
+
+  header::before {
+    top: 17px;
+    left: 24px;
+
+    width: 30px;
+    height: 30px;
+  }
+
+  header::after {
+    top: 24px;
+    left: 68px;
+
+    font-size: 12px;
+  }
+
+  .model-selection-container {
+    grid-template-columns: 1fr;
+
+    width: min(90%, 560px);
+
+    padding-top: 10px;
+  }
+
+  .model-card {
+    min-height: 220px;
+
+    padding: 30px 28px 78px;
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    height: 155px;
+
+    font-size: 27px;
+  }
+
+  .model-selection-container {
+    width: calc(100% - 32px);
+    gap: 18px;
+
+    padding-bottom: 30px;
+  }
+
+  .model-card {
+    min-height: 190px;
+
+    border-radius: 18px;
+
+    font-size: 22px;
+  }
+
+  .model-card::after {
+    right: 22px;
+    bottom: 22px;
+
+    width: 40px;
+    height: 40px;
+  }
+
+  .back-button {
+    margin-bottom: 35px;
+  }
+}
+
+
+/* =========================
+   10. Reduced motion
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .model-card,
+  .model-card::before,
+  .model-card::after,
+  .back-button {
+    transition: none;
+  }
+}

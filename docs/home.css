@@ -1,0 +1,456 @@
+/* =========================
+   1. Design tokens
+========================= */
+
+:root {
+  --navy-950: #081b33;
+  --navy-900: #0d2748;
+  --navy-800: #12365f;
+
+  --blue-600: #2563eb;
+  --blue-500: #3b82f6;
+  --cyan-400: #38bdf8;
+
+  --emerald-500: #10b981;
+  --violet-500: #8b5cf6;
+
+  --background: #f3f6fa;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+
+  --text-primary: #10233f;
+  --text-secondary: #64748b;
+  --border: #dce4ee;
+
+  --shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 12px rgba(15, 23, 42, 0.04);
+
+  --shadow-lg:
+    0 18px 40px rgba(15, 39, 72, 0.12),
+    0 4px 12px rgba(15, 39, 72, 0.06);
+
+  --radius-lg: 22px;
+  --transition: 220ms ease;
+}
+
+
+/* =========================
+   2. Global reset
+========================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(59, 130, 246, 0.08),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 5% 90%,
+      rgba(16, 185, 129, 0.05),
+      transparent 25rem
+    ),
+    var(--background);
+
+  color: var(--text-primary);
+
+  font-family:
+    Inter,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+}
+
+
+/* =========================
+   3. Header
+========================= */
+
+.top-bar {
+  position: relative;
+
+  width: 100%;
+  height: 72px;
+
+  background:
+    linear-gradient(
+      110deg,
+      var(--navy-950) 0%,
+      var(--navy-900) 58%,
+      var(--navy-800) 100%
+    );
+
+  box-shadow: 0 8px 24px rgba(8, 27, 51, 0.16);
+}
+
+/* Logo mark */
+.top-bar::before {
+  content: "";
+
+  position: absolute;
+  top: 50%;
+  left: max(6vw, 32px);
+
+  width: 34px;
+  height: 34px;
+
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(56, 189, 248, 0.95),
+      rgba(37, 99, 235, 0.35)
+    );
+
+  transform: translateY(-50%) rotate(-4deg);
+}
+
+/* Brand name */
+.top-bar::after {
+  content: "SA ANALYTICS";
+
+  position: absolute;
+  top: 50%;
+  left: max(calc(6vw + 48px), 80px);
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+
+  transform: translateY(-50%);
+}
+
+
+/* =========================
+   4. Main layout
+========================= */
+
+.home-container {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 28px;
+
+  width: min(88%, 1080px);
+  min-height: 520px;
+
+  margin: 72px auto;
+}
+
+
+/* =========================
+   5. Shared card design
+========================= */
+
+.home-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  width: 100%;
+
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: var(--radius-lg);
+
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-primary);
+
+  box-shadow: var(--shadow-sm);
+
+  font-size: clamp(22px, 2.2vw, 30px);
+  font-weight: 760;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    color var(--transition);
+}
+
+/* Card highlight */
+.home-card::before {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+
+  width: 190px;
+  height: 190px;
+
+  border-radius: 50%;
+
+  background: var(--card-glow, rgba(59, 130, 246, 0.12));
+
+  filter: blur(4px);
+  opacity: 0.8;
+
+  transform: translate(42%, -42%) scale(0.9);
+
+  transition:
+    transform 350ms ease,
+    opacity 350ms ease;
+}
+
+/* Arrow */
+.home-card::after {
+  content: "→";
+
+  position: absolute;
+  right: 28px;
+  bottom: 25px;
+
+  display: grid;
+  place-items: center;
+
+  width: 45px;
+  height: 45px;
+
+  border: 1px solid var(--card-accent, var(--blue-600));
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--card-accent, var(--blue-600));
+
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+
+  transition:
+    background-color var(--transition),
+    color var(--transition),
+    transform var(--transition);
+}
+
+.home-card:hover {
+  transform: translateY(-7px);
+
+  border-color: var(--card-accent, var(--blue-500));
+
+  box-shadow: var(--shadow-lg);
+}
+
+.home-card:hover::before {
+  opacity: 1;
+  transform: translate(34%, -34%) scale(1.18);
+}
+
+.home-card:hover::after {
+  background: var(--card-accent, var(--blue-600));
+  color: #ffffff;
+
+  transform: translateX(4px);
+}
+
+.home-card:active {
+  transform: translateY(-2px);
+}
+
+.home-card:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 4px;
+}
+
+
+/* =========================
+   6. New Analysis card
+========================= */
+
+.new-analysis-card {
+  --card-accent: var(--blue-600);
+  --card-glow: rgba(59, 130, 246, 0.16);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+
+  min-height: 520px;
+
+  padding: 42px;
+}
+
+/* Small section label */
+.new-analysis-card span:first-child {
+  margin-bottom: 7px;
+
+  color: var(--blue-600);
+
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.18em;
+}
+
+/* Main title */
+.new-analysis-card span:last-child {
+  max-width: calc(100% - 60px);
+
+  font-size: clamp(34px, 4vw, 52px);
+  font-weight: 780;
+  letter-spacing: -0.055em;
+}
+
+
+/* =========================
+   7. Right-side cards
+========================= */
+
+.right-card-container {
+  display: grid;
+  grid-template-rows: 1fr 0.78fr;
+  gap: 28px;
+
+  min-width: 0;
+}
+
+.scenario-lab-card,
+.dcf-rim-card {
+  display: flex;
+  align-items: flex-end;
+
+  min-height: 0;
+
+  padding: 34px;
+  padding-right: 90px;
+}
+
+.scenario-lab-card {
+  --card-accent: var(--emerald-500);
+  --card-glow: rgba(16, 185, 129, 0.14);
+}
+
+.dcf-rim-card {
+  --card-accent: var(--violet-500);
+  --card-glow: rgba(139, 92, 246, 0.14);
+}
+
+
+/* =========================
+   8. Responsive layout
+========================= */
+
+@media (max-width: 800px) {
+  .top-bar {
+    height: 64px;
+  }
+
+  .top-bar::before {
+    left: 24px;
+
+    width: 30px;
+    height: 30px;
+  }
+
+  .top-bar::after {
+    left: 68px;
+
+    font-size: 12px;
+  }
+
+  .home-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+
+    width: min(90%, 560px);
+
+    margin: 40px auto;
+  }
+
+  .new-analysis-card {
+    min-height: 310px;
+
+    padding: 30px;
+  }
+
+  .right-card-container {
+    grid-template-rows: none;
+    gap: 20px;
+  }
+
+  .scenario-lab-card,
+  .dcf-rim-card {
+    min-height: 190px;
+
+    padding: 28px;
+    padding-right: 85px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-container {
+    width: calc(100% - 32px);
+
+    margin: 30px auto;
+  }
+
+  .home-card {
+    border-radius: 18px;
+  }
+
+  .new-analysis-card {
+    min-height: 270px;
+
+    padding: 25px;
+  }
+
+  .new-analysis-card span:last-child {
+    font-size: 36px;
+  }
+
+  .scenario-lab-card,
+  .dcf-rim-card {
+    min-height: 155px;
+
+    padding: 24px;
+    padding-right: 76px;
+  }
+
+  .home-card::after {
+    right: 22px;
+    bottom: 21px;
+
+    width: 40px;
+    height: 40px;
+  }
+}
+
+
+/* =========================
+   9. Reduced motion
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .home-card,
+  .home-card::before,
+  .home-card::after {
+    transition: none;
+  }
+}

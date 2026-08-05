@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Scenario Lab</title>
+  <link rel="stylesheet" href="scenario-lab.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <header class="app-header">
+      <div class="header-content">
+        <p class="eyebrow">VALUATION WORKBENCH</p>
+        <h1>Scenario Lab</h1>
+        <p class="header-description">
+          Test how growth, required return, and terminal assumptions change DCF and RIM valuation results.
+        </p>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <section class="intro-panel">
+        <div>
+          <p class="section-kicker">HOW IT WORKS</p>
+          <h2>Compare downside, base, and upside cases</h2>
+          <p>
+            Enter one set of base assumptions. The lab applies consistent Bear and Bull adjustments, then calculates DCF and RIM values separately.
+          </p>
+        </div>
+        <div class="policy-list" aria-label="Scenario adjustment policy">
+          <span><strong>Bear:</strong> Growth −2.0 pts, required return +1.0 pt, terminal growth −0.5 pt</span>
+          <span><strong>Base:</strong> Entered assumptions</span>
+          <span><strong>Bull:</strong> Growth +2.0 pts, required return −1.0 pt, terminal growth +0.5 pt</span>
+        </div>
+      </section>
+
+      <form id="scenarioLabForm" novalidate>
+        <section class="form-card">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">STEP 1</p>
+              <h2>Company and Market</h2>
+            </div>
+            <button type="button" id="loadDemoButton" class="text-button">Load Demo Data</button>
+          </div>
+
+          <div class="input-grid three-columns">
+            <label class="input-field" for="companyName">
+              <span>Company Name</span>
+              <input type="text" id="companyName" placeholder="Example: Apple" autocomplete="off" />
+            </label>
+
+            <label class="input-field" for="stockPrice">
+              <span>Current Stock Price</span>
+              <input type="number" id="stockPrice" min="0" step="any" placeholder="Required" />
+            </label>
+
+            <label class="input-field" for="SO">
+              <span>Shares Outstanding</span>
+              <input type="number" id="SO" min="0" step="any" placeholder="Required" />
+              <small>Use the same unit scale as all company values.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="method-input-layout">
+          <article class="form-card method-card dcf-input-card">
+            <div class="card-heading compact">
+              <div>
+                <p class="section-kicker">STEP 2A</p>
+                <h2>DCF Base Assumptions</h2>
+              </div>
+              <span class="method-badge dcf-badge">DCF</span>
+            </div>
+
+            <p class="method-description">
+              Values the operating business from projected free cash flow and converts enterprise value to equity value.
+            </p>
+
+            <div class="input-grid two-columns">
+              <label class="input-field" for="FCF">
+                <span>Current Free Cash Flow</span>
+                <input type="number" id="FCF" min="0" step="any" placeholder="Required" />
+              </label>
+
+              <label class="input-field" for="cash">
+                <span>Cash and Equivalents</span>
+                <input type="number" id="cash" step="any" placeholder="Required" />
+              </label>
+
+              <label class="input-field" for="tDebt">
+                <span>Total Debt</span>
+                <input type="number" id="tDebt" step="any" placeholder="Required" />
+              </label>
+
+              <label class="input-field" for="dcfProjectionYears">
+                <span>Projection Years</span>
+                <input type="number" id="dcfProjectionYears" min="1" max="10" step="1" value="5" />
+              </label>
+            </div>
+
+            <div class="slider-stack">
+              <div class="slider-control" data-control="dcfGrowth">
+                <div class="slider-heading">
+                  <label for="dcfGrowthRange">Annual FCF Growth</label>
+                  <div class="slider-number-wrap">
+                    <input type="number" id="dcfGrowth" min="-10" max="30" step="0.5" value="8" />
+                    <span>%</span>
+                  </div>
+                </div>
+                <input type="range" id="dcfGrowthRange" min="-10" max="30" step="0.5" value="8" />
+                <div class="range-labels"><span>−10%</span><span>30%</span></div>
+              </div>
+
+              <div class="slider-control" data-control="dcfDiscountRate">
+                <div class="slider-heading">
+                  <label for="dcfDiscountRateRange">Discount Rate</label>
+                  <div class="slider-number-wrap">
+                    <input type="number" id="dcfDiscountRate" min="1" max="30" step="0.5" value="10" />
+                    <span>%</span>
+                  </div>
+                </div>
+                <input type="range" id="dcfDiscountRateRange" min="1" max="30" step="0.5" value="10" />
+                <div class="range-labels"><span>1%</span><span>30%</span></div>
+              </div>
+
+              <div class="slider-control" data-control="dcfTerminalGrowth">
+                <div class="slider-heading">
+                  <label for="dcfTerminalGrowthRange">Terminal Growth</label>
+                  <div class="slider-number-wrap">
+                    <input type="number" id="dcfTerminalGrowth" min="-2" max="8" step="0.25" value="2.5" />
+                    <span>%</span>
+                  </div>
+                </div>
+                <input type="range" id="dcfTerminalGrowthRange" min="-2" max="8" step="0.25" value="2.5" />
+                <div class="range-labels"><span>−2%</span><span>8%</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="form-card method-card rim-input-card">
+            <div class="card-heading compact">
+              <div>
+                <p class="section-kicker">STEP 2B</p>
+                <h2>RIM Base Assumptions</h2>
+              </div>
+              <span class="method-badge rim-badge">RIM</span>
+            </div>
+
+            <p class="method-description">
+              Values equity from current book value plus the present value of future residual income.
+            </p>
+
+            <div class="input-grid two-columns">
+              <label class="input-field" for="tEquity">
+                <span>Book Value of Equity</span>
+                <input type="number" id="tEquity" min="0" step="any" placeholder="Required" />
+              </label>
+
+              <label class="input-field" for="netInc">
+                <span>Current Net Income</span>
+                <input type="number" id="netInc" min="0" step="any" placeholder="Required" />
+              </label>
+
+              <label class="input-field" for="payoutRatio">
+                <span>Dividend Payout Ratio (%)</span>
+                <input type="number" id="payoutRatio" min="0" max="100" step="0.5" value="30" />
+              </label>
+
+              <label class="input-field" for="rimProjectionYears">
+                <span>Projection Years</span>
+                <input type="number" id="rimProjectionYears" min="1" max="10" step="1" value="5" />
+              </label>
+            </div>
+
+            <div class="slider-stack">
+              <div class="slider-control" data-control="rimGrowth">
+                <div class="slider-heading">
+                  <label for="rimGrowthRange">Annual Earnings Growth</label>
+                  <div class="slider-number-wrap">
+                    <input type="number" id="rimGrowth" min="-10" max="30" step="0.5" value="8" />
+                    <span>%</span>
+                  </div>
+                </div>
+                <input type="range" id="rimGrowthRange" min="-10" max="30" step="0.5" value="8" />
+                <div class="range-labels"><span>−10%</span><span>30%</span></div>
+              </div>
+
+              <div class="slider-control" data-control="costOfEquity">
+                <div class="slider-heading">
+                  <label for="costOfEquityRange">Cost of Equity</label>
+                  <div class="slider-number-wrap">
+                    <input type="number" id="costOfEquity" min="1" max="35" step="0.5" value="11" />
+                    <span>%</span>
+                  </div>
+                </div>
+                <input type="range" id="costOfEquityRange" min="1" max="35" step="0.5" value="11" />
+                <div class="range-labels"><span>1%</span><span>35%</span></div>
+              </div>
+
+              <div class="slider-control" data-control="rimTerminalGrowth">
+                <div class="slider-heading">
+                  <label for="rimTerminalGrowthRange">Terminal Growth</label>
+                  <div class="slider-number-wrap">
+                    <input type="number" id="rimTerminalGrowth" min="-2" max="8" step="0.25" value="2.5" />
+                    <span>%</span>
+                  </div>
+                </div>
+                <input type="range" id="rimTerminalGrowthRange" min="-2" max="8" step="0.25" value="2.5" />
+                <div class="range-labels"><span>−2%</span><span>8%</span></div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <div id="formError" class="form-error" role="alert" aria-live="polite"></div>
+
+        <div class="action-row">
+          <button type="submit" id="runScenarioButton" class="primary-button">
+            Run Scenario Lab
+          </button>
+          <button type="button" id="resetButton" class="secondary-button">Reset</button>
+          <button type="button" id="backButton" class="secondary-button">← Back to Home</button>
+        </div>
+      </form>
+
+      <section id="resultsSection" class="results-section" hidden>
+        <div class="results-heading">
+          <div>
+            <p class="section-kicker">RESULTS</p>
+            <h2 id="resultsTitle">Scenario Comparison</h2>
+          </div>
+          <p id="resultsTimestamp" class="results-timestamp"></p>
+        </div>
+
+        <div id="scenarioCards" class="scenario-card-grid"></div>
+
+        <section class="result-panel method-comparison-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">BASE CASE</p>
+              <h3>Method Comparison</h3>
+            </div>
+            <span class="comparison-note">Compare the range; do not mechanically average the methods.</span>
+          </div>
+          <div id="methodComparison" class="metric-grid"></div>
+        </section>
+
+        <section class="result-panel sensitivity-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">DCF SENSITIVITY</p>
+              <h3>Discount Rate × Terminal Growth</h3>
+            </div>
+            <span class="comparison-note">Cells show intrinsic value per share.</span>
+          </div>
+          <div class="table-scroll">
+            <table class="sensitivity-table">
+              <thead id="sensitivityTableHead"></thead>
+              <tbody id="sensitivityTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="result-two-column">
+          <article class="result-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">IMPACT</p>
+                <h3>Key Value Drivers</h3>
+              </div>
+            </div>
+            <div id="keyDrivers" class="driver-list"></div>
+          </article>
+
+          <article class="result-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">RISK CHECK</p>
+                <h3>Assumption Warnings</h3>
+              </div>
+            </div>
+            <div id="warningList" class="warning-list"></div>
+          </article>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script src="scenario-lab.js"></script>
+</body>
+</html>
