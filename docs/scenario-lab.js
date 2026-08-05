@@ -1,4 +1,4 @@
-const API_BASE_URL = window.SA_API_BASE_URL || "http://127.0.0.1:5000";
+const API_BASE_URL = window.SA_API_BASE_URL || "https://company-evaluator-79k6.onrender.com";
 const STORAGE_KEY = "scenarioLabInputs";
 
 const form = document.getElementById("scenarioLabForm");
