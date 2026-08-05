@@ -93,7 +93,7 @@ async function evaluateRim() {
   setLoadingState(true);
 
   try {
-    const response = await fetch("http://127.0.0.1:5000/evaluate-rim", {
+    const response = await fetch("https://company-evaluator-79k6.onrender.com/evaluate-rim", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
